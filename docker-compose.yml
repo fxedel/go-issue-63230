@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  build-without-gocache:
+    container_name: build-without-gocache
+    image: golang:1.21.1
+    working_dir: /src/
+    volumes:
+      - "./:/src"
+    command: "go build -v -buildmode=plugin -o build/plugin-a.so ./plugin-a"
+
+  build-with-gocache:
+    container_name: build-with-gocache
+    image: golang:1.21.1
+    working_dir: /src/
+    volumes:
+      - "./:/src"
+    command: "go build -v -buildmode=plugin -o build/plugin-b.so ./plugin-b"
+    environment:
+      GOMODCACHE: /tmp
+
+  run:
+    container_name: run
+    image: golang:1.21.1
+    working_dir: /src/
+    volumes:
+      - "./:/src"
+    depends_on:
+      build-without-gocache:
+        condition: service_completed_successfully
+      build-with-gocache:
+        condition: service_completed_successfully
+    command: "go run cmd/main.go"
